@@ -1,11 +1,11 @@
 module accumulator (A, accum,overflow, clk, clr);
-
- input [7:0] A;
+ #(parameter N=16)
+ input [N-1:0] A;
  input clk, clr;
- output [7:0] accum;
+ output [N-1:0] accum;
  output reg overflow;
 
- reg [7:0] accum;
+ reg [N-1:0] accum;
 
  always@(clk) begin
     if(clk) begin
