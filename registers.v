@@ -9,7 +9,7 @@ module register_a (reset, CLK, D, Q);
 	if (reset)
 		Q = 0;
 	else
-	Q = D;
+		Q = D;
 endmodule // reg8
 
 module register_b (reset, CLK, D, Q);
@@ -23,5 +23,5 @@ module register_b (reset, CLK, D, Q);
 	if (reset)
 		Q = 0;
 	else
-	Q = D;
+		Q = D;
 endmodule // reg8
