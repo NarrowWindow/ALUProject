@@ -12,6 +12,7 @@ module combinationalLogic(rst, noOp, cmd, sa, sb, so);
 		     ~rst & ~noOp & cmd[0]};
 endmodule
 
+// Selector bit needs to be go through a decoder
 module Mux16(a15, a14, a13, a12, a11, a10, a9, a8, a7, a6, a5, a4, a3, a2, a1, a0, s, b) ;
 	parameter k = 32;
 	input [k-1:0] a15, a14, a13, a12, a11, a10, a9, a8, a7, a6, a5, a4, a3, a2, a1, a0 ;
@@ -29,6 +30,18 @@ module Mux16(a15, a14, a13, a12, a11, a10, a9, a8, a7, a6, a5, a4, a3, a2, a1, a
                 ({k{s[6]}} & a6) |
                 ({k{s[5]}} & a5) |
                 ({k{s[4]}} & a4) |
+                ({k{s[3]}} & a3) | 
+                ({k{s[2]}} & a2) | 
+                ({k{s[1]}} & a1) |
+                ({k{s[0]}} & a0) ;
+endmodule
+
+module Mux4(a3, a2, a1, a0, s, b) ;
+	parameter k = 16;
+	input [k-1:0] a3, a2, a1, a0 ;
+	input [3:0] s;
+	output[k-1:0] b;
+	assign b = 
                 ({k{s[3]}} & a3) | 
                 ({k{s[2]}} & a2) | 
                 ({k{s[1]}} & a1) |
@@ -110,7 +123,8 @@ module NOR(a, b, out);
     output [31:0] out;
     assign out = a ~| b;
 endmodule
-module register_a (reset, CLK, D, Q);
+
+module register (reset, CLK, D, Q);
 	parameter N=16;
 	input reset;
 	input CLK;
@@ -124,19 +138,6 @@ module register_a (reset, CLK, D, Q);
 	Q = D;
 endmodule // reg8
 
-module register_b (reset, CLK, D, Q);
-	parameter N=16;
-	input reset;
-	input CLK;
-	input [N-1:0] D;
-	output [N-1:0] Q;
-	reg [N-1:0] Q;
-	always @(posedge CLK)
-	if (reset)
-		Q = 0;
-	else
-	Q = D;
-endmodule // reg8
 module accumulator (A, accum,overflow, clk, clr);
  parameter N=16;
  input [N-1:0] A;
@@ -156,3 +157,32 @@ module accumulator (A, accum,overflow, clk, clr);
  end
 
 endmodule
+
+module dec2 (in, out)
+input [1:0} in;
+output [3:0] out;
+assign out = { in[1] & in[0],
+				in[1] & ~in[0],
+				~in[1] & in[0],
+				~in[1] & ~in[0]				
+}
+
+endmodule
+
+module testbench()
+parameter n = 16;
+
+wire [n-1:0] Aout, Bout;
+reg [n-1:0] A, B;
+wire [n-1:0] AcumOut;
+
+
+
+Mux4 AMux (Aout, A, 16'b00000000, 16'b00000000, );
+Mux4 BMux (Bout, B, 16'b00000000, AcumOut);  
+
+register regA (
+
+endmodule
+
+
