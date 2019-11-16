@@ -134,6 +134,9 @@ module register (CLK, D, Q);
 	reg [N-1:0] Q;
 	always @(posedge CLK)
 	Q = D;
+	//begin
+	//$display(D);
+	//end
 endmodule // reg8
 
 module accumulator (A, accum,overflow, clk, clr);
@@ -224,7 +227,7 @@ dec2 DecA (sa, soa);
 dec2 DecB (sb, sob);
 
 Mux4 AMux (Aout, A, 16'b00000000, 16'b00000000, soa, MuxAout);
-Mux4 BMux (Bout, B, 16'b00000000, AcumOut, sob, MuxBout);  
+Mux4 BMux (Bout, B, 16'b00000000, AcumOut[15:0], sob, MuxBout);  
 
 register regA (clk, MuxAout, Aout);
 register regB (clk, MuxBout, Bout);
@@ -287,9 +290,12 @@ breadboard ALU (clk, A, B, cmd, rst, noOp, AcumOut, overflow, divByZero);
 		$display("%b  %b", ALU.Aout, ALU.Bout);
 		
 		#10 // Setting opCode to add
-		cmd = 5'b00001; rst = 0;
+		rst = 0;
 		#10
-		$display("%d", ALU.AcumOut);
+		cmd = 5'b00001; 
+		#10
+		$display("%b", ALU.AcumOut);
+		#10
 		$finish;
 		end
 endmodule
