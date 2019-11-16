@@ -70,9 +70,11 @@ module MULT(a, b, out);
     assign out = a * b;
 endmodule
 
-module DIV(a, b, out);
+module DIV(a, b, out, divByZero);
     input [15:0] a, b;
     output [31:0] out;
+    output divByZero;
+    assign divByZero = ~(|b);
     assign out = a / b;
 endmodule
 
@@ -135,7 +137,7 @@ module register (CLK, D, Q);
 endmodule // reg8
 
 module accumulator (A, accum,overflow, clk, clr);
- parameter N=16;
+ parameter N=32;
  input [N-1:0] A;
  input clk, clr;
  output [N-1:0] accum;
@@ -167,25 +169,56 @@ assign out = { in[1] & in[0],
 endmodule
 
 
-module breadboard(clk, A, B, cmd, rst, noOp);
+module dec4 (in, out);
+input [3:0] in;
+output [15:0] out;
+assign out = { in[3] & in[2] & in[1] & in[0],
+				in[3] & in[2] & in[1] & ~in[0],
+				in[3] & in[2] & ~in[1] & in[0],
+				in[3] & in[2] & ~in[1] & ~in[0],
+				in[3] & ~in[2] & in[1] & in[0],
+				in[3] & ~in[2] & in[1] & ~in[0],
+				in[3] & ~in[2] & ~in[1] & in[0],
+				in[3] & ~in[2] & ~in[1] & ~in[0],
+				~in[3] & in[2] & in[1] & in[0],
+				~in[3] & in[2] & in[1] & ~in[0],
+				~in[3] & in[2] & ~in[1] & in[0],
+				~in[3] & in[2] & ~in[1] & ~in[0],
+				~in[3] & ~in[2] & in[1] & in[0],
+				~in[3] & ~in[2] & in[1] & ~in[0],
+				~in[3] & ~in[2] & ~in[1] & in[0],
+				~in[3] & ~in[2] & ~in[1] & ~in[0]				
+};
+
+endmodule
+
+module breadboard(clk, A, B, cmd, rst, noOp, AcumOut, overflow, divByZero);
+// breadboard ALU (clk, A, B, cmd, rst, noOp, AcumOut, overflow, divByZero);
 parameter n = 16;
 
 input clk, rst, noOp;
+output [n*2-1:0]AcumOut;
+output overflow, divByZero;
 
 wire [n-1:0] Aout, Bout;
 input [n-1:0] A, B;
 input [4:0] cmd;
-wire [n-1:0] AcumOut;
+wire [n*2-1:0] AcumOut;
+wire [n*2-1:0] MuxOut;
 wire [n-1:0] MuxAout, MuxBout;
 wire [3:0] so;
+wire [15:0] soo;
 
-wire [n-1:0] addOut, subOut, SLOut, SROut, divOut, mulOut;
-wire [n-1:0] andOut, orOut, xorOut, notOut; 
+// For calc modules
+wire [(n*2)-1:0] addOut, subOut, SLOut, SROut, divOut, mulOut;
+wire [(n*2)-1:0] andOut, orOut, xorOut, notOut; 
+
 
 wire [1:0] sa, sb;
 wire [3:0] soa, sob;
 
 wire overflow;
+wire divByZero;
 
 dec2 DecA (sa, soa);
 dec2 DecB (sb, sob);
@@ -201,13 +234,21 @@ combinationalLogic CL(rst, noOp, cmd, sa, sb, so);
 ADD adder (Aout, Bout, addOut, overflow);
 SUB sub(Aout, Bout, subOut, overflow);
 MULT mult(Aout, Bout, mulOut);
-DIV div(Aout, Bout, divOut);
+DIV div(Aout, Bout, divOut, divByZero);
 SLL sl(Aout, Bout, SLOut);
 SRL sr(Aout, Bout, SROut);
 AND anD(Aout, Bout, andOut);
 OR oR(Aout, Bout, orOut);
 XOR xOr(Aout, Bout, xorOut);
-NOT noT(Aout, notOut);0
+NOT noT(Aout, notOut);
+
+dec4 DecO(so, soo);
+
+Mux16 calcMux (AcumOut, addOut, subOut, mulOut, divOut, SROut, SLOut, 
+andOut, orOut, xorOut, notOut, ~andOut, ~orOut, ~xorOut, 32'b00000000, 32'b00000000,
+soo, MuxOut);
+
+register #(32) Acum (clk, MuxOut, AcumOut);
 
 endmodule
 
@@ -217,9 +258,10 @@ reg clk, rst, noOp;
 reg [4:0] cmd;
 reg [15:0] A, B;
 wire [31:0] out;
-wire overflow;
+wire overflow, divByZero;
+wire [31:0] AcumOut; 
 
-breadboard ALU (clk, A, B, cmd, rst, noOp);
+breadboard ALU (clk, A, B, cmd, rst, noOp, AcumOut, overflow, divByZero);
  
 
 //---------------------------------------------
@@ -244,6 +286,10 @@ breadboard ALU (clk, A, B, cmd, rst, noOp);
 		
 		$display("%b  %b", ALU.Aout, ALU.Bout);
 		
+		#10 // Setting opCode to add
+		cmd = 5'b00001; rst = 0;
+		#10
+		$display("%d", ALU.AcumOut);
 		$finish;
 		end
 endmodule
