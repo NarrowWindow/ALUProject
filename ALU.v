@@ -179,8 +179,13 @@ wire [n-1:0] AcumOut;
 wire [n-1:0] MuxAout, MuxBout;
 wire [3:0] so;
 
+wire [n-1:0] addOut, subOut, SLOut, SROut, divOut, mulOut;
+wire [n-1:0] andOut, orOut, xorOut, notOut; 
+
 wire [1:0] sa, sb;
 wire [3:0] soa, sob;
+
+wire overflow;
 
 dec2 DecA (sa, soa);
 dec2 DecB (sb, sob);
@@ -193,6 +198,17 @@ register regB (clk, MuxBout, Bout);
 
 combinationalLogic CL(rst, noOp, cmd, sa, sb, so);
 
+ADD adder (Aout, Bout, addOut, overflow);
+SUB sub(Aout, Bout, subOut, overflow);
+MULT mult(Aout, Bout, mulOut);
+DIV div(Aout, Bout, divOut);
+SLL sl(Aout, Bout, SLOut);
+SRL sr(Aout, Bout, SROut);
+AND anD(Aout, Bout, andOut);
+OR oR(Aout, Bout, orOut);
+XOR xOr(Aout, Bout, xorOut);
+NOT noT(Aout, notOut);0
+
 endmodule
 
 module testbench();
@@ -204,7 +220,7 @@ wire [31:0] out;
 wire overflow;
 
 breadboard ALU (clk, A, B, cmd, rst, noOp);
-ADD adder (A, B, out, overflow);  
+ 
 
 //---------------------------------------------
 	//The Display Thread with Clock Control
