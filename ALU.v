@@ -1,3 +1,29 @@
+//========================================
+//ALU Digial Abstraction State Labels
+//Operation codes for differnt operations
+//========================================
+`define add 5'b00001
+`define sub 5'b00010 
+`define mult 5'b00011
+`define div 5'b00100
+`define sr 5'b00101
+`define sl 5'b00110
+`define anD 5'b00111
+`define oR 5'b01000
+`define xOr 5'b01001
+`define nOt 5'b01010
+`define nanD 5'b01011
+`define noR 5'b01100
+`define nxOr 5'b01101
+
+//=======================================================
+//ALU Triggers/Inputs
+//Combinational logic inputs are enabled is enabled is 1
+//Combinational logic inputs are disabled is enabled is 0
+//=======================================================
+`define enabled 1'b0
+`define disabled 1'b1
+
 module combinationalLogic(rst, noOp, cmd, sa, sb, so);
 	input rst, noOp;
 	input[4:0] cmd;
@@ -234,7 +260,7 @@ register regB (clk, MuxBout, Bout);
 
 combinationalLogic CL(rst, noOp, cmd, sa, sb, so);
 
-ADD adder (Aout, Bout, addOut, overflow);
+ADD add (Aout, Bout, addOut, overflow);
 SUB sub(Aout, Bout, subOut, overflow);
 MULT mult(Aout, Bout, mulOut);
 DIV div(Aout, Bout, divOut, divByZero);
@@ -267,9 +293,9 @@ wire [31:0] AcumOut;
 breadboard ALU (clk, A, B, cmd, rst, noOp, AcumOut, overflow, divByZero);
  
 
-//---------------------------------------------
+	//=============================================
 	//The Display Thread with Clock Control
-	//---------------------------------------------
+	//=============================================
 	initial
 		begin
 			forever
@@ -280,11 +306,32 @@ breadboard ALU (clk, A, B, cmd, rst, noOp, AcumOut, overflow, divByZero);
 					clk = 1 ;
 				end
 		end
-		
+	
+	//=============================================
+	//The Display Thread with Clock Control
+	//=============================================
+	initial 
+		begin
+		#1 //Offset the Square Wave
+		$display("Num1                     Num 2				      Operation			      Current Output                   Next State");
+			forever
+					begin
+					#15
+					if(overflow == 1 || divByZero == 1)
+					    $display("%b (%d) %b (%d) %b                   Running %b (%d) ERROR", 
+					    ALU.A, ALU.A, ALU.B, ALU.B, cmd, AcumOut[15:0], AcumOut[15:0]);
+					else    
+					    $display("%b (%d) %b (%d) %b                   Running %b (%d) Running", 
+					    ALU.A, ALU.A, ALU.B, ALU.B, cmd, AcumOut[15:0], AcumOut[15:0]);
+					end
+	end			
+	
+
+	
 	initial
 		begin
-		#1
-		A = 16'd17; B = 16'd15; rst = 1; noOp = 0; cmd = 5'b0;
+		#2 //Offset the Square Wave
+		A = 16'd400; B = 16'd20; rst = 1; noOp = 0; cmd = 5'b0;
 		#10 
 		
 		$display("%b  %b", ALU.Aout, ALU.Bout);
@@ -292,10 +339,40 @@ breadboard ALU (clk, A, B, cmd, rst, noOp, AcumOut, overflow, divByZero);
 		#10 // Setting opCode to add
 		rst = 0;
 		#10
-		cmd = 5'b00001; 
-		#10
-		$display("%b", ALU.AcumOut);
-		#10
+		cmd = `add; 
+		#20
+        cmd = `sub;
+        #20
+        cmd = `mult;
+        #20
+        cmd = `div;
+        #20
+        A = 16'd16; B = 16'd2;
+        cmd = `sl;
+        #20 
+		cmd = `sr;
+		#20
+		A = 16'd15; B = 16'd7;
+		cmd = `anD;
+		#20
+		cmd = `oR;
+		#20
+		cmd = `xOr;
+		#20
+		cmd = `nOt;
+		#20
+		cmd = `nanD;
+		#20
+		cmd = `noR;
+		#20
+		cmd = `nxOr;
+		#20
+		A = 16'd60000; B = 16'd6000;
+		cmd = `add;
+		#20
+		B = 16'd0;
+		cmd = `div;
+		#20
 		$finish;
 		end
 endmodule
