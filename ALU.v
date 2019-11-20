@@ -75,30 +75,29 @@ module Mux4(a3, a2, a1, a0, s, b) ;
 endmodule
 
 module ADD(a, b, out, overflow);
-    input [15:0] a, b;
-    output [31:0] out;
+    input signed [15:0] a, b;
+    output signed [31:0] out;
     output overflow;
-
     assign out = a + b;
     assign overflow = out[16];
 endmodule
 
 module SUB(a, b, out, underflow);
-    input [15:0] a, b;
-    output [31:0] out;
+    input signed [15:0] a, b;
+    output signed [31:0] out;
     output underflow;
     assign out = a - b;
 endmodule
 
 module MULT(a, b, out);
-    input [15:0] a, b;
-    output [31:0] out;
+    input signed [15:0] a, b;
+    output signed [31:0] out;
     assign out = a * b;
 endmodule
 
 module DIV(a, b, out, divByZero);
-    input [15:0] a, b;
-    output [31:0] out;
+    input signed [15:0] a, b;
+    output signed [31:0] out;
     output divByZero;
     assign divByZero = ~(|b);
     assign out = a / b;
@@ -229,7 +228,7 @@ input clk, rst, noOp;
 output [n*2-1:0]AcumOut;
 output overflow, divByZero;
 
-wire [n-1:0] Aout, Bout;
+wire signed [n-1:0] Aout, Bout;
 input [n-1:0] A, B;
 input [4:0] cmd;
 wire [n*2-1:0] AcumOut;
@@ -255,8 +254,8 @@ dec2 DecB (sb, sob);
 Mux4 AMux (Aout, A, 16'b00000000, 16'b00000000, soa, MuxAout);
 Mux4 BMux (Bout, B, 16'b00000000, AcumOut[15:0], sob, MuxBout);  
 
-register regA (clk, MuxAout, Aout);
-register regB (clk, MuxBout, Bout);
+register regA (~clk, MuxAout, Aout);
+register regB (~clk, MuxBout, Bout);
 
 combinationalLogic CL(rst, noOp, cmd, sa, sb, so);
 
@@ -288,7 +287,7 @@ reg [4:0] cmd;
 reg [15:0] A, B;
 wire [31:0] out;
 wire overflow, divByZero;
-wire [31:0] AcumOut; 
+wire signed [31:0] AcumOut; 
 
 breadboard ALU (clk, A, B, cmd, rst, noOp, AcumOut, overflow, divByZero);
  
@@ -313,16 +312,16 @@ breadboard ALU (clk, A, B, cmd, rst, noOp, AcumOut, overflow, divByZero);
 	initial 
 		begin
 		#1 //Offset the Square Wave
-		$display("Num1                     Num 2				      Operation			      Current Output                   Next State");
+		$display("Num1                     Num 2                    Operation Current Output                                     Next State");
 			forever
 					begin
-					#15
+					#10
 					if(overflow == 1 || divByZero == 1)
-					    $display("%b (%d) %b (%d) %b                   Running %b (%d) ERROR", 
-					    ALU.A, ALU.A, ALU.B, ALU.B, cmd, AcumOut[15:0], AcumOut[15:0]);
+					    $display("%16b (%5d) %16b (%5d)   %b   Running %16b %16b (%6d) ERROR", 
+					    ALU.Aout, ALU.Aout, ALU.Bout, ALU.Bout, cmd, AcumOut[31:16], AcumOut[15:0], AcumOut);
 					else    
-					    $display("%b (%d) %b (%d) %b                   Running %b (%d) Running", 
-					    ALU.A, ALU.A, ALU.B, ALU.B, cmd, AcumOut[15:0], AcumOut[15:0]);
+					    $display("%16b (%5d) %16b (%5d)   %b   Running %16b %16b (%6d) Running", 
+					    ALU.Aout, ALU.Aout, ALU.Bout, ALU.Bout, cmd, AcumOut[31:16], AcumOut[15:0], AcumOut);
 					end
 	end			
 	
@@ -331,48 +330,48 @@ breadboard ALU (clk, A, B, cmd, rst, noOp, AcumOut, overflow, divByZero);
 	initial
 		begin
 		#2 //Offset the Square Wave
-		A = 16'd400; B = 16'd20; rst = 1; noOp = 0; cmd = 5'b0;
+		A = 16'd10; B = 16'd20; rst = 1; noOp = 0; cmd = 5'b0;
 		#10 
 		
-		$display("%b  %b", ALU.Aout, ALU.Bout);
-		
-		#10 // Setting opCode to add
+		//$display("%b  %b", ALU.Aout, ALU.Bout);
+		 // Setting opCode to add
 		rst = 0;
-		#10
 		cmd = `add; 
-		#20
+		#10
         cmd = `sub;
-        #20
+        #10
+	cmd = 5'b10100;
+	#10
         cmd = `mult;
-        #20
+        #10
         cmd = `div;
-        #20
+        #10
         A = 16'd16; B = 16'd2;
         cmd = `sl;
-        #20 
+        #10 
 		cmd = `sr;
-		#20
+		#10
 		A = 16'd15; B = 16'd7;
 		cmd = `anD;
-		#20
+		#10
 		cmd = `oR;
-		#20
+		#10
 		cmd = `xOr;
-		#20
+		#10
 		cmd = `nOt;
-		#20
+		#10
 		cmd = `nanD;
-		#20
+		#10
 		cmd = `noR;
-		#20
+		#10
 		cmd = `nxOr;
-		#20
+		#10
 		A = 16'd60000; B = 16'd6000;
 		cmd = `add;
-		#20
+		#10
 		B = 16'd0;
 		cmd = `div;
-		#20
+		#10
 		$finish;
 		end
 endmodule
