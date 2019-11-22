@@ -221,7 +221,7 @@ assign out = { in[3] & in[2] & in[1] & in[0],
 endmodule
 
 module breadboard(CLK, A, B, CMD, RST, noOp, AcumOut, overflow, divByZero);
-// breadboard ALU (clk, A, B, CMD, RST, noOp, AcumOut, overflow, divByZero);
+
 parameter n = 16;
 
 input CLK, RST, noOp;
@@ -241,10 +241,11 @@ wire [15:0] soo;
 wire [(n*2)-1:0] addOut, subOut, SLOut, SROut, divOut, mulOut;
 wire [(n*2)-1:0] andOut, orOut, xorOut, notOut; 
 
-
+// The multplexor selectors
 wire [1:0] sa, sb;
 wire [3:0] soa, sob;
 
+// The error wires
 wire overflow;
 wire divByZero;
 
@@ -282,6 +283,7 @@ endmodule
 
 module testbench();
 
+// The inputs and outputs of the ALU
 reg clk, rst, noOp;
 reg [4:0] cmd;
 reg [15:0] A, B;
@@ -330,18 +332,17 @@ breadboard ALU (clk, A, B, cmd, rst, noOp, AcumOut, overflow, divByZero);
 	initial
 		begin
 		#2 //Offset the Square Wave
-		A = 16'd10; B = 16'd20; rst = 1; noOp = 0; cmd = 5'b0;
+		A = 16'd10; B = 16'd20; rst = 1; noOp = 0; cmd = 5'b0; // Setting the registers to zero with reset
 		#10 
-		
-		//$display("%b  %b", ALU.Aout, ALU.Bout);
-		 // Setting opCode to add
-		rst = 0;
+		rst = 0; noOp = 1;
+		#10
+		noOp = 0;
 		cmd = `add; 
 		#10
         cmd = `sub;
         #10
-	cmd = 5'b10100;
-	#10
+		cmd = 5'b10100; // The divide command, but load from the accumlator.
+		#10
         cmd = `mult;
         #10
         cmd = `div;
