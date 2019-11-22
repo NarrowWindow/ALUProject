@@ -220,17 +220,17 @@ assign out = { in[3] & in[2] & in[1] & in[0],
 
 endmodule
 
-module breadboard(clk, A, B, cmd, rst, noOp, AcumOut, overflow, divByZero);
-// breadboard ALU (clk, A, B, cmd, rst, noOp, AcumOut, overflow, divByZero);
+module breadboard(CLK, A, B, CMD, RST, noOp, AcumOut, overflow, divByZero);
+// breadboard ALU (clk, A, B, CMD, RST, noOp, AcumOut, overflow, divByZero);
 parameter n = 16;
 
-input clk, rst, noOp;
+input CLK, RST, noOp;
 output [n*2-1:0]AcumOut;
 output overflow, divByZero;
 
 wire signed [n-1:0] Aout, Bout;
 input [n-1:0] A, B;
-input [4:0] cmd;
+input [4:0] CMD;
 wire [n*2-1:0] AcumOut;
 wire [n*2-1:0] MuxOut;
 wire [n-1:0] MuxAout, MuxBout;
@@ -254,10 +254,10 @@ dec2 DecB (sb, sob);
 Mux4 AMux (Aout, A, 16'b00000000, 16'b00000000, soa, MuxAout);
 Mux4 BMux (Bout, B, 16'b00000000, AcumOut[15:0], sob, MuxBout);  
 
-register regA (~clk, MuxAout, Aout);
-register regB (~clk, MuxBout, Bout);
+register regA (~CLK, MuxAout, Aout);
+register regB (~CLK, MuxBout, Bout);
 
-combinationalLogic CL(rst, noOp, cmd, sa, sb, so);
+combinationalLogic CL(RST, noOp, CMD, sa, sb, so);
 
 ADD add (Aout, Bout, addOut, overflow);
 SUB sub(Aout, Bout, subOut, overflow);
@@ -276,7 +276,7 @@ Mux16 calcMux (AcumOut, addOut, subOut, mulOut, divOut, SROut, SLOut,
 andOut, orOut, xorOut, notOut, ~andOut, ~orOut, ~xorOut, 32'b00000000, 32'b00000000,
 soo, MuxOut);
 
-register #(32) Acum (clk, MuxOut, AcumOut);
+register #(32) Acum (CLK, MuxOut, AcumOut);
 
 endmodule
 
